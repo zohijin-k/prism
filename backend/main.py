@@ -1,0 +1,24 @@
+import os
+
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from routers import analyze
+
+app = FastAPI(title="PRISM API", version="0.1.0")
+
+frontend_origin = os.getenv("FRONTEND_ORIGIN", "http://localhost:5173")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[frontend_origin],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+app.include_router(analyze.router, prefix="/api")
+
+
+@app.get("/health")
+async def health():
+    return {"status": "ok"}
