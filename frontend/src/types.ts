@@ -1,3 +1,10 @@
+export interface PaperInfo {
+  filename: string;
+  page_count: number;
+  text_preview: string;
+  extraction_error: string | null;
+}
+
 export interface PaperSummary {
   problem: string;
   limitation: string;
@@ -36,6 +43,7 @@ export interface MappingItem {
 }
 
 export interface AnalysisResult {
+  paperInfo: PaperInfo | null;
   summary: PaperSummary;
   implementationPlan: string[];
   components: Components;

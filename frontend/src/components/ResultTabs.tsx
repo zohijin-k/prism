@@ -69,7 +69,7 @@ export default function ResultTabs({ result }: Props) {
 
       {/* Content */}
       <div className="p-6">
-        {active === "summary"    && <SummaryTab    summary={result.summary} />}
+        {active === "summary"    && <SummaryTab    summary={result.summary} paperInfo={result.paperInfo} />}
         {active === "plan"       && <PlanTab        plan={result.implementationPlan} />}
         {active === "components" && <ComponentsTab  components={result.components} />}
         {active === "comparison" && <ComparisonTab  items={result.comparison} />}

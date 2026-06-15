@@ -2,6 +2,13 @@ from pydantic import BaseModel
 from typing import Any, Dict, List, Literal, Optional
 
 
+class PaperInfo(BaseModel):
+    filename: str
+    page_count: int
+    text_preview: str
+    extraction_error: Optional[str] = None
+
+
 class PaperSummary(BaseModel):
     problem: str
     limitation: str
@@ -36,6 +43,7 @@ class MappingItem(BaseModel):
 
 
 class AnalysisResult(BaseModel):
+    paperInfo: Optional[PaperInfo] = None
     summary: PaperSummary
     implementationPlan: List[str]
     components: Components
