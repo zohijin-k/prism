@@ -1,8 +1,20 @@
+export interface SectionInfo {
+  header: string;
+  char_count: number;
+  preview: string;
+}
+
+export interface PaperSections {
+  detected: Record<string, SectionInfo>;
+  total_chars: number;
+}
+
 export interface PaperInfo {
   filename: string;
   page_count: number;
   text_preview: string;
   extraction_error: string | null;
+  sections: PaperSections;
 }
 
 export interface PaperSummary {
