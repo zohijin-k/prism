@@ -35,6 +35,14 @@ MOCK_RESULT = AnalysisResult(
             "found": False,
         },
     },
+    repoAnalysis={
+        "inputType": "none",
+        "repoName": None,
+        "status": "No repository or code provided",
+        "relevantFiles": [],
+        "fileCount": 0,
+        "codeHints": {"models": [], "losses": [], "optimizers": [], "datasets": [], "metrics": [], "config": {}},
+    },
     comparison=[
         {
             "item": "Model Architecture",

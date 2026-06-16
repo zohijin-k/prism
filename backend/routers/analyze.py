@@ -6,8 +6,9 @@ from pypdf.errors import PdfReadError
 
 from component_extractor import extract_components
 from mock_data import MOCK_RESULT
-from models.schemas import AnalysisResult, Components, PaperInfo
+from models.schemas import AnalysisResult, Components, PaperInfo, RepoAnalysis
 from paper_parser import build_paper_info, parse_pdf
+from repo_analyzer import analyze_repo
 
 router = APIRouter()
 
@@ -33,7 +34,12 @@ async def analyze_paper(
     paper_info = PaperInfo(**build_paper_info(filename, parsed, error))
     components = Components(**extract_components(parsed))
 
+    zip_content = await code_zip.read() if code_zip else None
+    repo_analysis = RepoAnalysis(**analyze_repo(github_url, zip_content))
+
     # Simulate analysis latency; replace with real LLM call later
     await asyncio.sleep(1.5)
 
-    return MOCK_RESULT.model_copy(update={"paperInfo": paper_info, "components": components})
+    return MOCK_RESULT.model_copy(
+        update={"paperInfo": paper_info, "components": components, "repoAnalysis": repo_analysis}
+    )

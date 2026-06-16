@@ -58,6 +58,26 @@ export interface Components {
   hyperparameters: HyperparametersField;
 }
 
+export type RepoInputType = "github" | "zip" | "none";
+
+export interface CodeHints {
+  models: string[];
+  losses: string[];
+  optimizers: string[];
+  datasets: string[];
+  metrics: string[];
+  config: Record<string, string>;
+}
+
+export interface RepoAnalysis {
+  inputType: RepoInputType;
+  repoName: string | null;
+  status: string;
+  relevantFiles: string[];
+  fileCount: number;
+  codeHints: CodeHints;
+}
+
 export type ComparisonStatus = "Match" | "Code Only" | "Paper Only" | "Mismatch";
 
 export interface ComparisonItem {
@@ -80,6 +100,7 @@ export interface AnalysisResult {
   summary: PaperSummary;
   implementationPlan: string[];
   components: Components;
+  repoAnalysis: RepoAnalysis;
   comparison: ComparisonItem[];
   mapping: MappingItem[];
   missingInfo: string[];

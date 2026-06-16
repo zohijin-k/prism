@@ -60,6 +60,24 @@ class Components(BaseModel):
     hyperparameters: HyperparametersField
 
 
+class CodeHints(BaseModel):
+    models: List[str]
+    losses: List[str]
+    optimizers: List[str]
+    datasets: List[str]
+    metrics: List[str]
+    config: Dict[str, str]
+
+
+class RepoAnalysis(BaseModel):
+    inputType: Literal["github", "zip", "none"]
+    repoName: Optional[str] = None
+    status: str
+    relevantFiles: List[str]
+    fileCount: int
+    codeHints: CodeHints
+
+
 class ComparisonItem(BaseModel):
     item: str
     paper: str
@@ -80,6 +98,7 @@ class AnalysisResult(BaseModel):
     summary: PaperSummary
     implementationPlan: List[str]
     components: Components
+    repoAnalysis: RepoAnalysis
     comparison: List[ComparisonItem]
     mapping: List[MappingItem]
     missingInfo: List[str]

@@ -72,7 +72,7 @@ export default function ResultTabs({ result }: Props) {
         {active === "summary"    && <SummaryTab    summary={result.summary} paperInfo={result.paperInfo} />}
         {active === "plan"       && <PlanTab        plan={result.implementationPlan} />}
         {active === "components" && <ComponentsTab  components={result.components} />}
-        {active === "comparison" && <ComparisonTab  items={result.comparison} />}
+        {active === "comparison" && <ComparisonTab  items={result.comparison} repoAnalysis={result.repoAnalysis} />}
         {active === "mapping"    && <MappingTab     items={result.mapping} />}
         {active === "missing"    && <MissingInfoTab items={result.missingInfo} />}
       </div>
