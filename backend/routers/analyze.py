@@ -6,8 +6,9 @@ from pypdf.errors import PdfReadError
 
 from comparison_engine import compare_paper_and_code
 from component_extractor import extract_components
+from mapping_engine import build_mappings
 from mock_data import MOCK_RESULT
-from models.schemas import AnalysisResult, Components, ComparisonItem, PaperInfo, RepoAnalysis
+from models.schemas import AnalysisResult, Components, ComparisonItem, MappingItem, PaperInfo, RepoAnalysis
 from paper_parser import build_paper_info, parse_pdf
 from repo_analyzer import analyze_repo
 
@@ -44,6 +45,12 @@ async def analyze_paper(
         ComparisonItem(**item) for item in compare_paper_and_code(components_dict, repo_dict["codeHints"])
     ]
 
+    paper_sections = parsed["sections"] if parsed else {}
+    mapping = [
+        MappingItem(**item)
+        for item in build_mappings(paper_sections, repo_dict["codeHints"], repo_dict["relevantFiles"])
+    ]
+
     # Simulate analysis latency; replace with real LLM call later
     await asyncio.sleep(1.5)
 
@@ -53,5 +60,6 @@ async def analyze_paper(
             "components": components,
             "repoAnalysis": repo_analysis,
             "comparison": comparison,
+            "mapping": mapping,
         }
     )
