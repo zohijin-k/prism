@@ -32,6 +32,8 @@ export interface ComponentField {
   source: string | null;
   confidence: ConfidenceLevel;
   found: boolean;
+  matchedSentence?: string | null;
+  score?: number | null;
 }
 
 export interface MetricsField {
@@ -39,6 +41,8 @@ export interface MetricsField {
   source: string | null;
   confidence: ConfidenceLevel;
   found: boolean;
+  matchedSentence?: string | null;
+  score?: number | null;
 }
 
 export interface HyperparametersField {
@@ -46,6 +50,8 @@ export interface HyperparametersField {
   source: string | null;
   confidence: ConfidenceLevel;
   found: boolean;
+  matchedSentence?: string | null;
+  score?: number | null;
 }
 
 export interface Components {

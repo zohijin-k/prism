@@ -34,6 +34,8 @@ class ComponentField(BaseModel):
     source: Optional[str] = None
     confidence: Literal["High", "Medium", "Low"]
     found: bool
+    matchedSentence: Optional[str] = None
+    score: Optional[int] = None
 
 
 class MetricsField(BaseModel):
@@ -41,6 +43,8 @@ class MetricsField(BaseModel):
     source: Optional[str] = None
     confidence: Literal["High", "Medium", "Low"]
     found: bool
+    matchedSentence: Optional[str] = None
+    score: Optional[int] = None
 
 
 class HyperparametersField(BaseModel):
@@ -48,6 +52,8 @@ class HyperparametersField(BaseModel):
     source: Optional[str] = None
     confidence: Literal["High", "Medium", "Low"]
     found: bool
+    matchedSentence: Optional[str] = None
+    score: Optional[int] = None
 
 
 class Components(BaseModel):
