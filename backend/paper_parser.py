@@ -143,73 +143,66 @@ def _detect_sections(text: str) -> dict[str, dict[str, str]]:
     return sections
 
 
-def extract_paper_info(filename: str, content: bytes) -> dict:
+def parse_pdf(content: bytes) -> dict:
     """
-    Extract metadata, text preview, and section structure from a PDF.
-    Returns a dict matching PaperInfo schema.
-    Never raises — errors are captured in extraction_error.
+    Parse a PDF into page_count, full_text, and sections (full body text, not previews).
+    Raises PdfReadError or another Exception on failure — caller handles error reporting.
+    Used as the shared parse step for both PaperInfo and component extraction.
     """
-    try:
-        reader = PdfReader(BytesIO(content))
-        page_count = len(reader.pages)
+    reader = PdfReader(BytesIO(content))
+    page_count = len(reader.pages)
+    full_text = "\n".join(page.extract_text() or "" for page in reader.pages).strip()
+    sections = _detect_sections(full_text) if full_text else {}
+    return {"page_count": page_count, "full_text": full_text, "sections": sections}
 
-        # Extract full text (needed for section detection)
-        all_text = "\n".join(
-            page.extract_text() or "" for page in reader.pages
-        ).strip()
 
-        if not all_text:
-            return {
-                "filename": filename,
-                "page_count": page_count,
-                "text_preview": "(No selectable text found — this PDF may be image-only or scanned.)",
-                "extraction_error": None,
-                "sections": {"detected": {}, "total_chars": 0},
-            }
+def build_paper_info(filename: str, parsed: Optional[dict], error: Optional[str]) -> dict:
+    """Build a dict matching the PaperInfo schema from a parse_pdf() result, or an error message."""
+    if error:
+        return {
+            "filename": filename,
+            "page_count": 0,
+            "text_preview": "",
+            "extraction_error": error,
+            "sections": {"detected": {}, "total_chars": 0},
+        }
 
-        # Build preview from the start of full text
-        preview = all_text[:PREVIEW_CHARS]
-        if len(all_text) > PREVIEW_CHARS:
-            preview = preview.rstrip() + "…"
+    page_count = parsed["page_count"]
+    full_text = parsed["full_text"]
+    sections = parsed["sections"]
 
-        # Detect sections
-        raw = _detect_sections(all_text)
-        detected: dict[str, dict] = {}
-        for key, info in raw.items():
-            body = info["body"]
-            sec_preview = body[:SECTION_PREVIEW_CHARS]
-            if len(body) > SECTION_PREVIEW_CHARS:
-                sec_preview = sec_preview.rstrip() + "…"
-            detected[key] = {
-                "header": info["header"],
-                "char_count": len(body),
-                "preview": sec_preview,
-            }
-
+    if not full_text:
         return {
             "filename": filename,
             "page_count": page_count,
-            "text_preview": preview,
+            "text_preview": "(No selectable text found — this PDF may be image-only or scanned.)",
             "extraction_error": None,
-            "sections": {
-                "detected": detected,
-                "total_chars": sum(d["char_count"] for d in detected.values()),
-            },
+            "sections": {"detected": {}, "total_chars": 0},
         }
 
-    except PdfReadError as exc:
-        return {
-            "filename": filename,
-            "page_count": 0,
-            "text_preview": "",
-            "extraction_error": f"Could not read PDF: {exc}",
-            "sections": {"detected": {}, "total_chars": 0},
+    preview = full_text[:PREVIEW_CHARS]
+    if len(full_text) > PREVIEW_CHARS:
+        preview = preview.rstrip() + "…"
+
+    detected: dict[str, dict] = {}
+    for key, info in sections.items():
+        body = info["body"]
+        sec_preview = body[:SECTION_PREVIEW_CHARS]
+        if len(body) > SECTION_PREVIEW_CHARS:
+            sec_preview = sec_preview.rstrip() + "…"
+        detected[key] = {
+            "header": info["header"],
+            "char_count": len(body),
+            "preview": sec_preview,
         }
-    except Exception as exc:
-        return {
-            "filename": filename,
-            "page_count": 0,
-            "text_preview": "",
-            "extraction_error": f"Unexpected error during extraction: {exc}",
-            "sections": {"detected": {}, "total_chars": 0},
-        }
+
+    return {
+        "filename": filename,
+        "page_count": page_count,
+        "text_preview": preview,
+        "extraction_error": None,
+        "sections": {
+            "detected": detected,
+            "total_chars": sum(d["char_count"] for d in detected.values()),
+        },
+    }

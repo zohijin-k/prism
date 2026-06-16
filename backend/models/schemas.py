@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Any, Dict, List, Literal, Optional
+from typing import Dict, List, Literal, Optional
 
 
 class SectionInfo(BaseModel):
@@ -29,14 +29,35 @@ class PaperSummary(BaseModel):
     contribution: List[str]
 
 
+class ComponentField(BaseModel):
+    value: str
+    source: Optional[str] = None
+    confidence: Literal["High", "Medium", "Low"]
+    found: bool
+
+
+class MetricsField(BaseModel):
+    value: List[str]
+    source: Optional[str] = None
+    confidence: Literal["High", "Medium", "Low"]
+    found: bool
+
+
+class HyperparametersField(BaseModel):
+    value: Dict[str, str]
+    source: Optional[str] = None
+    confidence: Literal["High", "Medium", "Low"]
+    found: bool
+
+
 class Components(BaseModel):
-    dataset: str
-    model: str
-    backbone: str
-    loss: str
-    optimizer: str
-    metrics: List[str]
-    hyperparameters: Dict[str, Any]
+    dataset: ComponentField
+    model: ComponentField
+    backbone: ComponentField
+    loss: ComponentField
+    optimizer: ComponentField
+    metrics: MetricsField
+    hyperparameters: HyperparametersField
 
 
 class ComparisonItem(BaseModel):

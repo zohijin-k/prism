@@ -25,14 +25,37 @@ export interface PaperSummary {
   contribution: string[];
 }
 
+export type ConfidenceLevel = "High" | "Medium" | "Low";
+
+export interface ComponentField {
+  value: string;
+  source: string | null;
+  confidence: ConfidenceLevel;
+  found: boolean;
+}
+
+export interface MetricsField {
+  value: string[];
+  source: string | null;
+  confidence: ConfidenceLevel;
+  found: boolean;
+}
+
+export interface HyperparametersField {
+  value: Record<string, string>;
+  source: string | null;
+  confidence: ConfidenceLevel;
+  found: boolean;
+}
+
 export interface Components {
-  dataset: string;
-  model: string;
-  backbone: string;
-  loss: string;
-  optimizer: string;
-  metrics: string[];
-  hyperparameters: Record<string, string | number>;
+  dataset: ComponentField;
+  model: ComponentField;
+  backbone: ComponentField;
+  loss: ComponentField;
+  optimizer: ComponentField;
+  metrics: MetricsField;
+  hyperparameters: HyperparametersField;
 }
 
 export type ComparisonStatus = "Match" | "Code Only" | "Paper Only" | "Mismatch";
@@ -43,8 +66,6 @@ export interface ComparisonItem {
   code: string;
   status: ComparisonStatus;
 }
-
-export type ConfidenceLevel = "High" | "Medium" | "Low";
 
 export interface MappingItem {
   codeBlock: string;
