@@ -1,5 +1,12 @@
+from component_extractor import FALLBACK_DEFAULTS
 from models.schemas import AnalysisResult
+from repo_analyzer import EMPTY_CODE_HINTS
 
+# paperInfo, components, repoAnalysis, comparison, and mapping below are placeholders only:
+# routers/analyze.py always overrides them with real extraction/analysis results before
+# returning a response, so their literal content never reaches a client. summary,
+# implementationPlan, and missingInfo are the only fields still served as-is (no real
+# analysis engine for those yet).
 MOCK_RESULT = AnalysisResult(
     summary={
         "problem": "This paper addresses the difficulty of accurately segmenting small objects in complex visual scenes.",
@@ -22,18 +29,8 @@ MOCK_RESULT = AnalysisResult(
         "Compare reproduced results with paper tables",
     ],
     components={
-        "dataset": {"value": "Medical image segmentation dataset", "source": None, "confidence": "Low", "found": False},
-        "model": {"value": "Attention U-Net", "source": None, "confidence": "Low", "found": False},
-        "backbone": {"value": "U-Net encoder-decoder", "source": None, "confidence": "Low", "found": False},
-        "loss": {"value": "Dice Loss + BCE Loss", "source": None, "confidence": "Low", "found": False},
-        "optimizer": {"value": "Adam", "source": None, "confidence": "Low", "found": False},
-        "metrics": {"value": ["Dice Score", "mIoU"], "source": None, "confidence": "Low", "found": False},
-        "hyperparameters": {
-            "value": {"learningRate": "1e-4", "batchSize": "8", "epochs": "100"},
-            "source": None,
-            "confidence": "Low",
-            "found": False,
-        },
+        key: {"value": value, "source": None, "confidence": "Low", "found": False}
+        for key, value in FALLBACK_DEFAULTS.items()
     },
     repoAnalysis={
         "inputType": "none",
@@ -41,67 +38,10 @@ MOCK_RESULT = AnalysisResult(
         "status": "No repository or code provided",
         "relevantFiles": [],
         "fileCount": 0,
-        "codeHints": {
-            "models": [], "backbones": [], "losses": [], "optimizers": [], "datasets": [], "metrics": [], "config": {},
-        },
+        "codeHints": EMPTY_CODE_HINTS,
     },
-    comparison=[
-        {
-            "item": "Model",
-            "paper": "Attention U-Net",
-            "code": "AttentionUNet class found",
-            "status": "Match",
-            "confidence": "High",
-            "explanation": "Attention U-Net in the paper matches AttentionUNet found in the code.",
-        },
-        {
-            "item": "Loss Function",
-            "paper": "Dice Loss + BCE Loss",
-            "code": "DiceBCELoss implemented",
-            "status": "Match",
-            "confidence": "High",
-            "explanation": "Dice Loss + BCE Loss in the paper matches DiceBCELoss found in the code.",
-        },
-        {
-            "item": "Optimizer",
-            "paper": "Adam",
-            "code": "Adam optimizer used in train.py",
-            "status": "Match",
-            "confidence": "High",
-            "explanation": "Adam in the paper matches the Adam optimizer found in the code.",
-        },
-        {
-            "item": "Augmentation",
-            "paper": "Not clearly specified",
-            "code": "RandomFlip and RandomRotate found",
-            "status": "Code Only",
-            "confidence": "Medium",
-            "explanation": "Augmentation was detected in the code (RandomFlip, RandomRotate) but not identified in the paper.",
-        },
-    ],
-    mapping=[
-        {
-            "codeBlock": "models/attention_unet.py > AttentionGate",
-            "paperSection": "Section 3.2 Attention Module",
-            "paperReference": "Figure 2",
-            "explanation": "This class appears to implement the attention gate described in the method section.",
-            "confidence": "High",
-        },
-        {
-            "codeBlock": "losses/dice_bce_loss.py > DiceBCELoss",
-            "paperSection": "Section 3.4 Training Objective",
-            "paperReference": "Equation 4",
-            "explanation": "This loss function matches the training objective described in the paper.",
-            "confidence": "High",
-        },
-        {
-            "codeBlock": "train.py > optimizer = Adam(...)",
-            "paperSection": "Experiment Setup",
-            "paperReference": "Training Details",
-            "explanation": "The optimizer configuration matches the experimental setup.",
-            "confidence": "Medium",
-        },
-    ],
+    comparison=[],
+    mapping=[],
     missingInfo=[
         "Random seed is not specified in the paper.",
         "Learning rate scheduler is not clearly described.",

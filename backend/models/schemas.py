@@ -105,7 +105,3 @@ class AnalysisResult(BaseModel):
     comparison: List[ComparisonItem]
     mapping: List[MappingItem]
     missingInfo: List[str]
-
-
-class AnalyzeRequest(BaseModel):
-    github_url: Optional[str] = None

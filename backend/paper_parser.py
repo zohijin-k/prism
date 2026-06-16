@@ -5,7 +5,6 @@ from io import BytesIO
 from typing import Optional
 
 from pypdf import PdfReader
-from pypdf.errors import PdfReadError
 
 PREVIEW_CHARS = 800
 SECTION_PREVIEW_CHARS = 200
