@@ -21,12 +21,15 @@ PRISM is a web service that analyzes a research paper PDF alongside optional Git
 
 ## Screenshots
 
-> Screenshots aren't checked into the repo yet. Once the UI is stable, add PNGs under
-> `docs/screenshots/` and reference them here, e.g.:
+> Screenshots aren't captured yet — see [docs/screenshots/README.md](docs/screenshots/README.md)
+> for capture guidelines. Once the PNGs below are added, the embeds will render automatically:
 >
 > ```markdown
-> ![Upload form](docs/screenshots/upload-form.png)
-> ![Comparison tab](docs/screenshots/comparison-tab.png)
+> ![Home / Upload](docs/screenshots/home-upload.png)
+> ![Summary](docs/screenshots/summary.png)
+> ![Research Components](docs/screenshots/research-components.png)
+> ![Paper-Code Comparison](docs/screenshots/paper-code-comparison.png)
+> ![Paper-Code Mapping](docs/screenshots/paper-code-mapping.png)
 > ```
 >
 > Until then, run the app locally (see [Getting Started](#getting-started)) to see the upload
