@@ -62,6 +62,7 @@ export type RepoInputType = "github" | "zip" | "none";
 
 export interface CodeHints {
   models: string[];
+  backbones: string[];
   losses: string[];
   optimizers: string[];
   datasets: string[];
@@ -78,13 +79,15 @@ export interface RepoAnalysis {
   codeHints: CodeHints;
 }
 
-export type ComparisonStatus = "Match" | "Code Only" | "Paper Only" | "Mismatch";
+export type ComparisonStatus = "Match" | "Partial Match" | "Mismatch" | "Paper Only" | "Code Only" | "Unknown";
 
 export interface ComparisonItem {
   item: string;
   paper: string;
   code: string;
   status: ComparisonStatus;
+  confidence: ConfidenceLevel;
+  explanation: string;
 }
 
 export interface MappingItem {

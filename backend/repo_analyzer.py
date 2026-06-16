@@ -8,6 +8,7 @@ from typing import Optional
 
 from component_extractor import (
     DISPLAY_NAMES,
+    KNOWN_BACKBONES,
     KNOWN_DATASETS,
     KNOWN_LOSSES,
     KNOWN_METRICS,
@@ -33,6 +34,7 @@ MAX_FILES_READ = 50  # cap number of files whose contents are read
 
 EMPTY_CODE_HINTS = {
     "models": [],
+    "backbones": [],
     "losses": [],
     "optimizers": [],
     "datasets": [],
@@ -148,6 +150,8 @@ def extract_code_hints(contents: dict) -> dict:
         m.group(1) for m in CLASS_MODEL_RE.finditer(combined) if "loss" not in m.group(1).lower()
     }
 
+    backbones = {_display(t) for t in KNOWN_BACKBONES if t in lowered}
+
     losses = {_display(t) for t in KNOWN_LOSSES if t in lowered}
     losses |= {m.group(1) for m in CLASS_LOSS_RE.finditer(combined)}
 
@@ -170,6 +174,7 @@ def extract_code_hints(contents: dict) -> dict:
 
     return {
         "models": sorted(models),
+        "backbones": sorted(backbones),
         "losses": sorted(losses),
         "optimizers": sorted(optimizers),
         "datasets": sorted(datasets),

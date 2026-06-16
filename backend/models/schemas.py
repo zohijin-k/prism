@@ -62,6 +62,7 @@ class Components(BaseModel):
 
 class CodeHints(BaseModel):
     models: List[str]
+    backbones: List[str]
     losses: List[str]
     optimizers: List[str]
     datasets: List[str]
@@ -82,7 +83,9 @@ class ComparisonItem(BaseModel):
     item: str
     paper: str
     code: str
-    status: Literal["Match", "Code Only", "Paper Only", "Mismatch"]
+    status: Literal["Match", "Partial Match", "Mismatch", "Paper Only", "Code Only", "Unknown"]
+    confidence: Literal["High", "Medium", "Low"]
+    explanation: str
 
 
 class MappingItem(BaseModel):
