@@ -6,11 +6,21 @@ from pypdf.errors import PdfReadError
 
 from comparison_engine import compare_paper_and_code
 from component_extractor import extract_components
+from gap_engine import detect_gaps
 from mapping_engine import build_mappings
-from mock_data import MOCK_RESULT
-from models.schemas import AnalysisResult, Components, ComparisonItem, MappingItem, PaperInfo, RepoAnalysis
+from models.schemas import (
+    AnalysisResult,
+    Components,
+    ComparisonItem,
+    MappingItem,
+    PaperInfo,
+    PaperSummary,
+    RepoAnalysis,
+)
 from paper_parser import build_paper_info, parse_pdf
+from plan_engine import generate_plan
 from repo_analyzer import analyze_repo
+from summary_engine import generate_summary
 
 router = APIRouter()
 
@@ -46,20 +56,26 @@ async def analyze_paper(
     ]
 
     paper_sections = parsed["sections"] if parsed else {}
+    full_text = parsed["full_text"] if parsed else ""
     mapping = [
         MappingItem(**item)
         for item in build_mappings(paper_sections, repo_dict["codeHints"], repo_dict["relevantFiles"])
     ]
 
+    summary = PaperSummary(**generate_summary(paper_sections, components_dict, full_text))
+    implementation_plan = generate_plan(components_dict)
+    missing_info = detect_gaps(full_text, components_dict)
+
     # Simulate analysis latency; replace with real LLM call later
     await asyncio.sleep(1.5)
 
-    return MOCK_RESULT.model_copy(
-        update={
-            "paperInfo": paper_info,
-            "components": components,
-            "repoAnalysis": repo_analysis,
-            "comparison": comparison,
-            "mapping": mapping,
-        }
+    return AnalysisResult(
+        paperInfo=paper_info,
+        summary=summary,
+        implementationPlan=implementation_plan,
+        components=components,
+        repoAnalysis=repo_analysis,
+        comparison=comparison,
+        mapping=mapping,
+        missingInfo=missing_info,
     )

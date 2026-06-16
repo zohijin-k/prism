@@ -82,10 +82,10 @@ function PaperStructureCard({ sections }: { sections: PaperSections }) {
 }
 
 const SUMMARY_FIELDS: { key: keyof Omit<PaperSummary, "contribution">; label: string; color: string }[] = [
-  { key: "problem",    label: "Problem",    color: "bg-red-50 border-red-200 text-red-800" },
-  { key: "limitation", label: "Limitation", color: "bg-yellow-50 border-yellow-200 text-yellow-800" },
-  { key: "method",     label: "Method",     color: "bg-blue-50 border-blue-200 text-blue-800" },
-  { key: "result",     label: "Result",     color: "bg-green-50 border-green-200 text-green-800" },
+  { key: "problem",    label: "핵심 문제",  color: "bg-red-50 border-red-200 text-red-800" },
+  { key: "limitation", label: "연구 한계",  color: "bg-yellow-50 border-yellow-200 text-yellow-800" },
+  { key: "method",     label: "제안 방법",  color: "bg-blue-50 border-blue-200 text-blue-800" },
+  { key: "result",     label: "실험 결과",  color: "bg-green-50 border-green-200 text-green-800" },
 ];
 
 function PaperInfoCard({ info }: { info: PaperInfo }) {
@@ -139,7 +139,6 @@ export default function SummaryTab({ summary, paperInfo }: Props) {
         </>
       )}
 
-      {/* Mock analysis */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {SUMMARY_FIELDS.map(({ key, label, color }) => (
           <div key={key} className={`rounded-lg border px-4 py-3 ${color}`}>
@@ -150,7 +149,7 @@ export default function SummaryTab({ summary, paperInfo }: Props) {
       </div>
 
       <div>
-        <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-3">Contributions</p>
+        <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-3">주요 기여점</p>
         <ul className="space-y-2">
           {summary.contribution.map((c, i) => (
             <li key={i} className="flex items-start gap-3 text-sm text-gray-800">

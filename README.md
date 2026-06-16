@@ -2,6 +2,8 @@
 
 **Paper Reproduction & Implementation Specification Manager**
 
+PRISM is designed as a Korean-first research implementation assistant, helping users understand and reproduce academic papers more efficiently.
+
 PRISM is a web service that analyzes a research paper PDF alongside optional GitHub repository or ZIP code, then returns a structured breakdown across six dimensions:
 
 1. **Paper Summary** — Problem, limitation, method, result, contributions
@@ -17,7 +19,7 @@ PRISM is a web service that analyzes a research paper PDF alongside optional Git
 |----------|-------------------------------------|
 | Frontend | React 18 + TypeScript + Vite + Tailwind CSS |
 | Backend  | FastAPI + Python 3.11               |
-| Analysis | Rule-based extraction (PDF parsing, component/repo/comparison/mapping engines); LLM-based summary integration planned |
+| Analysis | Rule-based extraction and generation (PDF parsing, component/repo/comparison/mapping engines, Korean summary/plan/gap engines) |
 
 ## Screenshots
 
@@ -48,8 +50,14 @@ flowchart TD
     F --> G
     C --> H[mapping_engine.py<br/>code evidence to paper sections]
     F --> H
+    C --> J[summary_engine.py<br/>Korean problem/method/result/contributions]
+    E --> K[plan_engine.py<br/>Korean implementation steps]
+    C --> L[gap_engine.py<br/>Korean reproducibility gaps]
     G --> I[AnalysisResult JSON]
     H --> I
+    J --> I
+    K --> I
+    L --> I
     I --> A
 ```
 
@@ -61,7 +69,8 @@ Request flow:
 4. `repo_analyzer.py` safely reads the ZIP in-memory (or parses the GitHub URL, without cloning yet) and extracts code-level hints from relevant files.
 5. `comparison_engine.py` compares paper components against code hints to produce match/mismatch status per item.
 6. `mapping_engine.py` links code evidence (models, losses, optimizers, metrics, datasets) back to the paper section that most likely describes it.
-7. The backend merges these real results into the response (summary, implementation plan, and missing-info gaps remain rule-based placeholders pending LLM integration) and returns a single `AnalysisResult` JSON object.
+7. `summary_engine.py`, `plan_engine.py`, and `gap_engine.py` generate the Korean summary, implementation plan, and reproducibility gaps directly from the detected sections and extracted components — no fixed/mock content.
+8. The backend merges all of these real results into a single `AnalysisResult` JSON object and returns it.
 
 ## Getting Started
 
@@ -135,12 +144,14 @@ See [backend/models/schemas.py](backend/models/schemas.py) for the authoritative
 PRISM/
 ├── backend/
 │   ├── main.py                  # FastAPI app + CORS
-│   ├── mock_data.py             # Placeholder AnalysisResult (summary/plan/missingInfo only)
 │   ├── paper_parser.py          # PDF text extraction + section detection
 │   ├── component_extractor.py   # Rule-based dataset/model/loss/optimizer/metrics extraction
 │   ├── repo_analyzer.py         # GitHub URL / ZIP parsing + code hint extraction
 │   ├── comparison_engine.py     # Paper-vs-code comparison heuristics
 │   ├── mapping_engine.py        # Code-evidence-to-paper-section mapping
+│   ├── summary_engine.py        # Korean paper summary generation (problem/limitation/method/result/contribution)
+│   ├── plan_engine.py           # Korean implementation plan generation
+│   ├── gap_engine.py            # Korean reproducibility gap detection
 │   ├── routers/
 │   │   └── analyze.py           # POST /api/analyze
 │   └── models/
@@ -164,8 +175,8 @@ PRISM/
 - [x] Repository / ZIP code structure analysis
 - [x] Automatic paper-code comparison engine
 - [x] Paper-code mapping engine
+- [x] Korean, paper-driven summary/plan/missing-info generation
 - [ ] Clone and analyze GitHub repositories directly (currently URL-parse only)
-- [ ] LLM-based paper summary and implementation plan generation
-- [ ] LLM-assisted missing-info / reproducibility gap detection
+- [ ] LLM-assisted summary, plan, and gap generation (currently rule-based)
 - [ ] Persist analysis results (currently stateless, single-request only)
 - [ ] Authentication and per-user analysis history
