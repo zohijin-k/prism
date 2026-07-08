@@ -12,6 +12,7 @@ FALLBACK_DEFAULTS = {
     "optimizer": "Adam",
     "metrics": ["Dice Score", "mIoU"],
     "hyperparameters": {"learningRate": "1e-4", "batchSize": "8", "epochs": "100"},
+    "task": "Not specified in title",
 }
 
 # Known terms, most specific first so multi-word matches win over generic substrings
@@ -72,23 +73,25 @@ DISPLAY_NAMES = {
     "librispeech": "LibriSpeech", "ucf101": "UCF101", "kinetics": "Kinetics",
 }
 
-# How much each section counts toward a component's extraction score. Method/Experiments/
-# Results describe what the paper actually did; Related Work mostly cites comparison
-# baselines, so it's weighted lowest to avoid those baselines being mistaken for the
-# paper's own components.
+# How much each section counts toward a component's extraction score. Title/Abstract/Method
+# describe what the paper actually proposes; Related Work mostly cites comparison baselines,
+# so it's weighted lowest to avoid those baselines being mistaken for the paper's own
+# components.
 SECTION_WEIGHTS = {
-    "method": 5,
-    "experiments": 4,
-    "results": 3,
+    "abstract": 8,
+    "method": 7,
+    "implementation_details": 6,
+    "experiments": 5,
+    "results": 4,
     "introduction": 2,
     "related_work": 1,
 }
-DEFAULT_SECTION_WEIGHT = 2  # abstract, conclusion, and any other unlisted section
-TITLE_WEIGHT = 5  # synthetic "title" source — as authoritative as Method for naming the model
+DEFAULT_SECTION_WEIGHT = 2  # conclusion and any other unlisted section
+TITLE_WEIGHT = 10  # synthetic "title" source — highest priority for naming the model
 
 # Sections that legitimately describe the paper's own training setup. Optimizer must be
 # confirmed here — a mention in Related Work or Introduction is not "this paper's optimizer".
-OPTIMIZER_SECTIONS = ("method", "experiments")
+OPTIMIZER_SECTIONS = ("method", "experiments", "implementation_details")
 
 DATASET_CONTEXT_RE = re.compile(
     r"(?:trained on|evaluated on|on the|using the)\s+(?:the\s+)?"
@@ -102,18 +105,35 @@ LR_RE = re.compile(r"learning rate[^0-9]{0,12}([0-9]+\.?[0-9]*(?:e-?[0-9]+)?)", 
 BATCH_RE = re.compile(r"batch size[^0-9]{0,12}([0-9]+)", re.IGNORECASE)
 EPOCH_RE = re.compile(r"([0-9]+)\s+epochs", re.IGNORECASE)
 
+# A single word of a proper-noun model name, hyphen-tolerant ("Pre-training", "Language-Image")
+_NAME_WORD = r"[A-Z][a-zA-Z]+(?:-[A-Za-z0-9]+)*"
+# A 1-4 word Title-Case model name ("DCPNet", "Segment Anything", "Vision Transformer")
+_NAME_PHRASE = rf"{_NAME_WORD}(?:\s{_NAME_WORD}){{0,3}}"
+
 # "Long Descriptive Name (ACRONYM)" — the most common way papers define their own model name
 LONGNAME_ACRONYM_RE = re.compile(
-    r"\b([A-Z][a-zA-Z]+(?:\s[A-Z][a-zA-Z]+){1,5})\s*\(([A-Z][A-Za-z0-9\-]{1,15})\)"
+    rf"\b({_NAME_WORD}(?:\s{_NAME_WORD}){{1,5}})\s*\(([A-Z][A-Za-z0-9\-]{{1,15}})\)"
 )
-# "we propose/introduce/present/call/name/term ... <Name>"
+# "ACRONYM (Long Descriptive Name)" — the reversed convention (e.g. CLIP papers)
+ACRONYM_LONGNAME_RE = re.compile(
+    rf"\b([A-Z]{{2,10}})\s*\(({_NAME_WORD}(?:\s{_NAME_WORD}){{1,6}})\)"
+)
+# "we propose/introduce/present/call/name/term ... <Name>", plus common paraphrasings like
+# "our proposed/network/framework/architecture" and "the proposed method/model"
 PROPOSED_NAME_RE = re.compile(
     r"\b(?:[Ww]e\s+(?:propose|introduce|present|call|name|term)|"
-    r"[Tt]his\s+(?:paper|work)\s+(?:proposes|introduces|presents))"
-    r"[^.]{0,80}?\b([A-Z][A-Za-z]{1,24}(?:-[A-Za-z0-9]+)?)\b"
+    r"[Tt]his\s+(?:paper|work)\s+(?:proposes|introduces|presents)|"
+    r"[Oo]ur\s+(?:proposed|network|framework|architecture)|"
+    r"[Tt]he\s+proposed\s+(?:method|model)|"
+    r"introduced\s+in\s+this\s+paper)"
+    rf"[^.]{{0,80}}?\b({_NAME_PHRASE})\b"
 )
-# Paper titles conventionally read "ModelName: longer description"
-TITLE_COLON_RE = re.compile(r"^\s*([A-Z][A-Za-z0-9]{1,20}(?:-[A-Za-z0-9]+)*)\s*:\s+\S")
+# Paper titles conventionally read "ModelName: longer description [for <task>]". The title's
+# own name token is more lenient than _NAME_WORD — short hyphenated names like "U-Net" or
+# "R-CNN" have fewer than 2 letters before the hyphen, which _NAME_WORD's "1+ letters" rule
+# would otherwise reject.
+_TITLE_NAME_WORD = r"[A-Z][a-zA-Z0-9]*(?:-[A-Za-z0-9]+)*"
+TITLE_COLON_RE = re.compile(rf"^\s*({_TITLE_NAME_WORD})\s*:\s+(\S.*)$")
 # Generic "XyzNet"-style architecture token, used as a last-resort signal when it repeats in Method
 ARCH_TOKEN_RE = re.compile(r"\b([A-Z][a-zA-Z0-9]{1,12}Net)\b")
 ARCH_TOKEN_BLOCKLIST = {"imagenet", "internet", "subnet", "intranet", "resnet", "unet"}
@@ -242,13 +262,32 @@ def _find_repeated_method_architecture(sections: dict) -> Optional[dict]:
 
 def _find_proposed_model_name(sections: dict, full_text: str) -> Optional[dict]:
     """
-    Look for the paper's own proposed model name, never Related Work: an explicit
-    'Long Descriptive Name (ACRONYM)' definition, 'we propose/introduce ... <Name>' phrasing,
-    the title's 'Name: ...' convention, then a repeated architecture-style token in Method.
+    Look for the paper's own proposed model name, never Related Work: the title's
+    'Name: Expanded Description [for Task]' convention, an explicit acronym definition
+    (either 'Long Descriptive Name (ACRONYM)' or the reversed 'ACRONYM (Long Descriptive
+    Name)'), 'we propose/introduce ... <Name>' phrasing, then a repeated architecture-style
+    token in Method. Title is checked first since it names the model with full authority
+    before the body is scanned at all.
     """
+    title = _title_guess(full_text)
+    m = TITLE_COLON_RE.match(title)
+    if m:
+        name, rest = m.group(1), m.group(2).strip()
+        task_split = re.split(r"\bfor\b", rest, maxsplit=1, flags=re.IGNORECASE)
+        expanded = task_split[0].strip().rstrip(",.:;") or None
+        return {
+            "value": name,
+            "source": "title",
+            "confidence": "High",
+            "found": True,
+            "matchedSentence": title[:240],
+            "score": TITLE_WEIGHT,
+            "expandedName": expanded,
+        }
+
     search_order = [
-        ("method", sections.get("method", {}).get("body", "")),
         ("abstract", sections.get("abstract", {}).get("body", "")),
+        ("method", sections.get("method", {}).get("body", "")),
         ("introduction", sections.get("introduction", {}).get("body", "")),
     ]
 
@@ -257,7 +296,7 @@ def _find_proposed_model_name(sections: dict, full_text: str) -> Optional[dict]:
             continue
         m = LONGNAME_ACRONYM_RE.search(body)
         if m:
-            acronym = m.group(2)
+            expanded, acronym = m.group(1), m.group(2)
             weight = SECTION_WEIGHTS.get(key, DEFAULT_SECTION_WEIGHT)
             return {
                 "value": acronym,
@@ -266,6 +305,20 @@ def _find_proposed_model_name(sections: dict, full_text: str) -> Optional[dict]:
                 "found": True,
                 "matchedSentence": m.group(0).strip()[:240],
                 "score": weight + 10,
+                "expandedName": expanded,
+            }
+        m = ACRONYM_LONGNAME_RE.search(body)
+        if m:
+            acronym, expanded = m.group(1), m.group(2)
+            weight = SECTION_WEIGHTS.get(key, DEFAULT_SECTION_WEIGHT)
+            return {
+                "value": acronym,
+                "source": key,
+                "confidence": "High",
+                "found": True,
+                "matchedSentence": m.group(0).strip()[:240],
+                "score": weight + 10,
+                "expandedName": expanded,
             }
 
     for key, body in search_order:
@@ -284,19 +337,52 @@ def _find_proposed_model_name(sections: dict, full_text: str) -> Optional[dict]:
                 "score": weight + 8,
             }
 
+    return _find_repeated_method_architecture(sections)
+
+
+def _extract_task(full_text: str) -> Optional[dict]:
+    """
+    Recover the paper's task/domain from the title's 'Name: Description for Task' convention
+    (e.g. "... for Image Enhancement"). Only the title is authoritative enough for this —
+    body text doesn't reliably state the task in one phrase.
+    """
     title = _title_guess(full_text)
     m = TITLE_COLON_RE.match(title)
-    if m:
-        return {
-            "value": m.group(1),
-            "source": "title",
-            "confidence": "High",
-            "found": True,
-            "matchedSentence": title[:240],
-            "score": TITLE_WEIGHT + 5,
-        }
+    if not m:
+        return None
+    rest = m.group(2).strip()
+    parts = re.split(r"\bfor\b", rest, maxsplit=1, flags=re.IGNORECASE)
+    if len(parts) < 2:
+        return None
+    task = parts[1].strip().rstrip(".,;:")
+    if not task:
+        return None
+    return {
+        "value": task,
+        "source": "title",
+        "confidence": "High",
+        "found": True,
+        "matchedSentence": title[:240],
+        "score": TITLE_WEIGHT,
+    }
 
-    return _find_repeated_method_architecture(sections)
+
+def _extract_referenced_models(sections: dict, primary_model_value: Optional[str]) -> list[str]:
+    """
+    Known models whose only evidence is Related Work (weight 1) — comparison baselines the
+    paper cites but doesn't propose. Excluded if it matches the chosen primary model, so the
+    proposed model itself never double-lists as a "reference".
+    """
+    candidates = _score_known_terms(sections, KNOWN_MODELS)
+    primary_lower = (primary_model_value or "").lower()
+    referenced = []
+    for term, info in candidates.items():
+        if info["section"] != "related_work":
+            continue
+        if term == primary_lower or _display(term).lower() == primary_lower:
+            continue
+        referenced.append(_display(term))
+    return sorted(set(referenced))
 
 
 def _extract_optimizer(sections: dict) -> Optional[dict]:
@@ -438,10 +524,14 @@ def extract_components(parsed: Optional[dict]) -> dict:
 
     proposed_model = _find_proposed_model_name(sections, full_text)
     model = proposed_model or _best_known_term(sections, KNOWN_MODELS, full_text, min_weight=2)
+    expanded_model_name = (proposed_model or {}).get("expandedName")
 
     return {
         "dataset": with_fallback(_extract_dataset(sections, full_text), FALLBACK_DEFAULTS["dataset"]),
         "model": with_fallback(model, FALLBACK_DEFAULTS["model"]),
+        "expandedModelName": expanded_model_name,
+        "task": with_fallback(_extract_task(full_text), FALLBACK_DEFAULTS["task"]),
+        "referencedModels": _extract_referenced_models(sections, model.get("value") if model else None),
         "backbone": with_fallback(
             _best_known_term(sections, KNOWN_BACKBONES, full_text, min_weight=1), FALLBACK_DEFAULTS["backbone"]
         ),

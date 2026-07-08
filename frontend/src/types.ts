@@ -57,6 +57,9 @@ export interface HyperparametersField {
 export interface Components {
   dataset: ComponentField;
   model: ComponentField;
+  expandedModelName?: string | null;
+  task: ComponentField;
+  referencedModels: string[];
   backbone: ComponentField;
   loss: ComponentField;
   optimizer: ComponentField;

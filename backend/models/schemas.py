@@ -59,6 +59,9 @@ class HyperparametersField(BaseModel):
 class Components(BaseModel):
     dataset: ComponentField
     model: ComponentField
+    expandedModelName: Optional[str] = None
+    task: ComponentField
+    referencedModels: List[str] = []
     backbone: ComponentField
     loss: ComponentField
     optimizer: ComponentField

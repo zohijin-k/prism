@@ -11,6 +11,7 @@ const CANONICAL_SECTIONS: { key: string; label: string }[] = [
   { key: "introduction", label: "Introduction" },
   { key: "related_work", label: "Related Work" },
   { key: "method",       label: "Method / Approach" },
+  { key: "implementation_details", label: "Implementation Details" },
   { key: "experiments",  label: "Experiments" },
   { key: "results",      label: "Results" },
   { key: "conclusion",   label: "Conclusion" },
