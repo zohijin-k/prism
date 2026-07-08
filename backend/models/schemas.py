@@ -103,6 +103,7 @@ class MappingItem(BaseModel):
     paperReference: str
     explanation: str
     confidence: Literal["High", "Medium", "Low"]
+    evidenceSentence: Optional[str] = None
 
 
 class AnalysisResult(BaseModel):

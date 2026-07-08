@@ -105,6 +105,7 @@ export interface MappingItem {
   paperReference: string;
   explanation: string;
   confidence: ConfidenceLevel;
+  evidenceSentence?: string | null;
 }
 
 export interface AnalysisResult {

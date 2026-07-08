@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from typing import Optional
 
 SECTION_DISPLAY = {
@@ -7,6 +8,7 @@ SECTION_DISPLAY = {
     "introduction": "Introduction",
     "related_work": "Related Work",
     "method": "Method",
+    "implementation_details": "Implementation Details",
     "experiments": "Experiments",
     "results": "Results",
     "conclusion": "Conclusion",
@@ -23,10 +25,23 @@ CATEGORY_LABELS = {
 SECTION_PRIORITY = {
     "model": ["method", "introduction", "abstract"],
     "loss": ["method", "experiments"],
-    "optimizer": ["experiments", "method"],
+    "optimizer": ["experiments", "implementation_details", "method"],
     "metrics": ["results", "experiments"],
-    "dataset": ["experiments", "results", "method"],
+    "dataset": ["experiments", "implementation_details", "results", "method"],
 }
+
+_SENTENCE_SPLIT_RE = re.compile(r"(?<=[.!?])\s+")
+
+
+def _matched_sentence(body: str, term: str) -> Optional[str]:
+    """First sentence in *body* containing *term* (case-insensitive), trimmed for display."""
+    if not body or not term:
+        return None
+    lowered_term = term.lower()
+    for sentence in _SENTENCE_SPLIT_RE.split(body):
+        if lowered_term in sentence.lower():
+            return sentence.strip()[:240]
+    return None
 
 FILE_KEYWORDS = {
     "model": ["model"],
@@ -49,17 +64,31 @@ def _find_file(relevant_files: list[str], keywords: list[str]) -> Optional[str]:
     return None
 
 
-def _find_section(sections: dict, priority: list[str]) -> tuple[Optional[str], Optional[str]]:
-    """Returns (section_key, reference_snippet) for the first matching section in priority order."""
+def _reference_preview(body: str, header: str) -> str:
+    preview = body[:REFERENCE_PREVIEW_CHARS].strip()
+    if len(body) > REFERENCE_PREVIEW_CHARS:
+        preview = preview.rstrip() + "…"
+    return preview or header
+
+
+def _find_term_section(term: str, sections: dict, priority: list[str]) -> tuple[Optional[str], Optional[str], str]:
+    """
+    Returns (section_key, reference_snippet, section_body) for *term* specifically — prefers
+    the first priority section whose body actually mentions the term (so the evidence sentence
+    is real), falling back to the first existing priority section otherwise (weaker evidence:
+    the section is plausible by priority but doesn't literally contain the term).
+    """
+    fallback: Optional[tuple[str, str, str]] = None
     for key in priority:
-        if key in sections:
-            body = sections[key].get("body", "")
-            header = sections[key].get("header", SECTION_DISPLAY.get(key, key))
-            preview = body[:REFERENCE_PREVIEW_CHARS].strip()
-            if len(body) > REFERENCE_PREVIEW_CHARS:
-                preview = preview.rstrip() + "…"
-            return key, (preview or header)
-    return None, None
+        if key not in sections:
+            continue
+        body = sections[key].get("body", "")
+        header = sections[key].get("header", SECTION_DISPLAY.get(key, key))
+        if fallback is None:
+            fallback = (key, _reference_preview(body, header), body)
+        if term.lower() in body.lower():
+            return key, _reference_preview(body, header), body
+    return fallback if fallback else (None, None, "")
 
 
 def _confidence(has_file: bool, has_section: bool) -> str:
@@ -75,12 +104,12 @@ def _build_category(category: str, terms: list[str], sections: dict, relevant_fi
         return []
 
     file_match = _find_file(relevant_files, FILE_KEYWORDS[category])
-    section_key, reference = _find_section(sections, SECTION_PRIORITY[category])
-    section_label = SECTION_DISPLAY.get(section_key, CATEGORY_LABELS[category]) if section_key else CATEGORY_LABELS[category]
-    confidence = _confidence(file_match is not None, section_key is not None)
 
     items = []
     for term in terms:
+        section_key, reference, body = _find_term_section(term, sections, SECTION_PRIORITY[category])
+        section_label = SECTION_DISPLAY.get(section_key, CATEGORY_LABELS[category]) if section_key else CATEGORY_LABELS[category]
+        confidence = _confidence(file_match is not None, section_key is not None)
         code_block = f"{file_match} > {term}" if file_match else term
         if section_key:
             explanation = f"{explain.format(term=term)} (found in the {section_label} section)."
@@ -93,6 +122,7 @@ def _build_category(category: str, terms: list[str], sections: dict, relevant_fi
                 "paperReference": reference or "Not found in paper",
                 "explanation": explanation,
                 "confidence": confidence,
+                "evidenceSentence": _matched_sentence(body, term) if section_key else None,
             }
         )
     return items
