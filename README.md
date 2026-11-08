@@ -23,19 +23,29 @@ PRISM is a web service that analyzes a research paper PDF alongside optional Git
 
 ## Screenshots
 
-> Screenshots aren't captured yet — see [docs/screenshots/README.md](docs/screenshots/README.md)
-> for capture guidelines. Once the PNGs below are added, the embeds will render automatically:
->
-> ```markdown
-> ![Home / Upload](docs/screenshots/home-upload.png)
-> ![Summary](docs/screenshots/summary.png)
-> ![Research Components](docs/screenshots/research-components.png)
-> ![Paper-Code Comparison](docs/screenshots/paper-code-comparison.png)
-> ![Paper-Code Mapping](docs/screenshots/paper-code-mapping.png)
-> ```
->
-> Until then, run the app locally (see [Getting Started](#getting-started)) to see the upload
-> form and the six result tabs (Summary, Plan, Components, Comparison, Mapping, Missing Info).
+### Paper Upload
+
+Upload a paper PDF and optionally provide a GitHub repository URL or a ZIP archive of its code.
+
+![PRISM paper upload form](docs/screenshots/01.png)
+
+### Paper Structure and Extracted Text
+
+Review the sections detected in the paper and inspect the extracted text preview.
+
+![Detected paper sections and extracted text preview](docs/screenshots/02.png)
+
+### Paper Summary
+
+View the generated problem, limitation, method, result, and contribution summary.
+
+![Generated paper summary](docs/screenshots/03.png)
+
+### Implementation Plan
+
+Follow the paper-specific steps generated for reproducing the implementation.
+
+![Generated implementation plan](docs/screenshots/04.png)
 
 ## Architecture
 
